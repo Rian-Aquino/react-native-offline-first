@@ -1,4 +1,4 @@
-import { AuthService } from "./authService";
+import { AuthService } from "./AuthService";
 
 export const services = {
   auth: AuthService,

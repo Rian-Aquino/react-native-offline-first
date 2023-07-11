@@ -1,4 +1,4 @@
-interface ILogin {
+interface ILoginRequest {
   email: string;
   password: string;
 }
@@ -6,3 +6,5 @@ interface ILogin {
 interface ILoginResponse {
   token: string;
 }
+
+interface ILogin extends ILoginRequest, ILoginResponse {}

@@ -1,11 +1,12 @@
 import React, { useContext, useState } from "react";
 import { services } from "../api/services";
+import { repositories } from "../database/repositories";
 
 interface IAuthContext {
-  userCredentials: ILogin | null;
+  userCredentials: ILoginRequest | null;
   token: string | null;
   logged: boolean;
-  login: (credentials: ILogin) => void;
+  login: (credentials: ILoginRequest) => void;
 }
 
 export const AuthContext = React.createContext<IAuthContext>({} as IAuthContext);
@@ -16,7 +17,13 @@ export const AuthContextProvider = ({ children }) => {
   const logged = !!userCredentials;
 
   const login: IAuthContext["login"] = async (credentials) => {
-    const res = await services.auth.login(credentials);
+    let res: ILoginResponse = {} as ILoginResponse;
+    res.token = await repositories.login.getToken(credentials);
+
+    if (!res.token) {
+      res = await services.auth.login(credentials);
+      await repositories.login.save({ ...credentials, token: res.token });
+    }
 
     setUserCredentials({ ...credentials });
     setToken(res.token);
