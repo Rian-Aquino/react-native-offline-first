@@ -10,7 +10,7 @@ export async function createTables() {
           email TEXT NOT NULL,
           first_name TEXT NOT NULL,
           last_name TEXT NOT NULL,
-          avatar TEXT NOT NULL
+          avatar TEXT
         );
       `
       );

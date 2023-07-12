@@ -1,7 +1,7 @@
 import { db } from "..";
 
 export class LoginRepository {
-  public static save({ email, password, token }: ILogin) {
+  public static save({ email, password, token }: ISession) {
     return new Promise<void>((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(

@@ -1,16 +1,14 @@
 import { Button, Text, TextInput, View } from "react-native";
 import { styles } from "./styles";
-import React, { useContext, useState } from "react";
-import { api } from "../../api";
-import { services } from "../../api/services";
-import { AuthContext, useAuth } from "../../context/authContext";
+import React, { useState } from "react";
+import { useAuth } from "../../context/authContext";
 
 export const Login = () => {
-  const { login } = useContext(AuthContext);
+  const { login } = useAuth();
   const passwordInputRef = React.createRef<TextInput>();
 
   const [email, setEmail] = useState("eve.holt@reqres.in");
-  const [password, setPassword] = useState("pistol");
+  const [password, setPassword] = useState("pistol12356");
 
   const handleSubmit = () => {
     login({ email, password });

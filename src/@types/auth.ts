@@ -7,4 +7,4 @@ interface ILoginResponse {
   token: string;
 }
 
-interface ILogin extends ILoginRequest, ILoginResponse {}
+interface ISession extends ILoginRequest, ILoginResponse {}
