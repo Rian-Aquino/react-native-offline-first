@@ -1,19 +1,26 @@
-import { useEffect, useState } from "react";
-import { FlatList, ActivityIndicator, Text, Pressable } from "react-native";
-import { services } from "../../api/services";
+import { FlatList, ActivityIndicator } from "react-native";
 import { UserCard } from "./components/UserCard";
 import { styles } from "./styles";
 import { ListEndFooter } from "./components/ListEndFooter";
-import { repositories } from "../../database/repositories";
-import { useNetInfo } from "@react-native-community/netinfo";
 import { useUserContext } from "../../context/userContext";
+import { FloatingButton } from "../../components/FloatingButton";
+import { useState } from "react";
 
 export const UserList = ({ navigation }) => {
-  const { isLoading, loadUsers, userList } = useUserContext();
+  const { isLoading, loadUsers, userList, setUserList } = useUserContext();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setUserList((prev) => ({ ...prev, page: 0, data: [] }));
+    setRefreshing(false);
+  };
 
   return (
     <>
       <FlatList
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
         contentContainerStyle={styles.containter}
         data={userList?.data}
         renderItem={({ item }) => <UserCard user={item} />}
@@ -21,9 +28,7 @@ export const UserList = ({ navigation }) => {
         onEndReached={() => loadUsers()}
         ListFooterComponent={isLoading ? <ActivityIndicator /> : <ListEndFooter />}
       />
-      <Pressable style={styles.floatingButton} onPress={() => navigation.navigate("NewUser")}>
-        <Text style={styles.floatingButton_text}>+</Text>
-      </Pressable>
+      <FloatingButton title="+" onPress={() => navigation.navigate("NewUser")} />
     </>
   );
 };

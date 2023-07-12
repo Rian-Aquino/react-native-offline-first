@@ -14,10 +14,4 @@ export const styles = StyleSheet.create({
     width: "100%",
     gap: 12,
   },
-  input: {
-    backgroundColor: "#e0e0e0",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-  },
 });

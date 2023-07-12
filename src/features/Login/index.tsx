@@ -1,16 +1,23 @@
-import { Button, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { styles } from "./styles";
 import React, { useState } from "react";
 import { useAuth } from "../../context/authContext";
+import { Button } from "../../components/Button";
+import { Input } from "../../components/Input";
+import { useErrorContext } from "../../context/errorContext";
+import { emailRegex } from "../../utils/emailRegex";
 
 export const Login = () => {
   const { login } = useAuth();
+  const { showError } = useErrorContext();
+
   const passwordInputRef = React.createRef<TextInput>();
 
   const [email, setEmail] = useState("eve.holt@reqres.in");
   const [password, setPassword] = useState("pistol12356");
 
   const handleSubmit = () => {
+    if (!email.match(emailRegex)) return showError("Digite um e-mail válido");
     login({ email, password });
   };
 
@@ -18,8 +25,7 @@ export const Login = () => {
     <View style={styles.container}>
       <View style={styles.form}>
         <Text>Login</Text>
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder="E-mail"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -29,8 +35,7 @@ export const Login = () => {
           onChange={(e) => setEmail(e.nativeEvent.text)}
           value={email}
         />
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder="Senha"
           ref={passwordInputRef}
           secureTextEntry={true}

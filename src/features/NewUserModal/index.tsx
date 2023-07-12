@@ -1,11 +1,15 @@
-import { Button, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { styles } from "./styles";
 import React, { useState } from "react";
-import { useAuth } from "../../context/authContext";
 import { useUserContext } from "../../context/userContext";
+import { Input } from "../../components/Input";
+import { Button } from "../../components/Button";
+import { emailRegex } from "../../utils/emailRegex";
+import { useErrorContext } from "../../context/errorContext";
 
 export const NewUserModal = ({ navigation }) => {
   const { createUser } = useUserContext();
+  const { showError } = useErrorContext();
 
   const [name, setName] = useState("Rian");
   const [lastName, setLastName] = useState("Aquino");
@@ -15,6 +19,7 @@ export const NewUserModal = ({ navigation }) => {
   const emailInputRef = React.createRef<TextInput>();
 
   const handleSubmit = async () => {
+    if (!email.match(emailRegex)) return showError("Digite um e-mail válido");
     await createUser({ first_name: name, last_name: lastName, avatar: null, email });
     navigation.navigate("Users");
   };
@@ -23,7 +28,7 @@ export const NewUserModal = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.form}>
         <Text>Cadastro de Usuário</Text>
-        <TextInput
+        <Input
           placeholder="Nome"
           style={styles.input}
           onChange={(e) => setName(e.nativeEvent.text)}
@@ -32,7 +37,7 @@ export const NewUserModal = ({ navigation }) => {
           blurOnSubmit={false}
           onSubmitEditing={() => lastNameInputRef.current.focus()}
         />
-        <TextInput
+        <Input
           placeholder="Sobrenome"
           style={styles.input}
           onChange={(e) => setLastName(e.nativeEvent.text)}
@@ -42,7 +47,7 @@ export const NewUserModal = ({ navigation }) => {
           onSubmitEditing={() => emailInputRef.current.focus()}
           ref={lastNameInputRef}
         />
-        <TextInput
+        <Input
           placeholder="Email"
           style={styles.input}
           onChange={(e) => setEmail(e.nativeEvent.text)}

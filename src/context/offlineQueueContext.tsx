@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNetInfo } from "@react-native-community/netinfo";
+import { SafeAreaView, Text } from "react-native";
+import { NoInternetWarning } from "../components/NoInternetWarning";
+import { useErrorContext } from "./errorContext";
 
 interface IOfflineQueueContext {
   enqueueRequest: (requestFn: any) => void;
@@ -9,6 +12,8 @@ const OfflineQueueContext = createContext<IOfflineQueueContext>({} as IOfflineQu
 
 export const OfflineQueueContextProvider = ({ children }) => {
   const { isConnected } = useNetInfo();
+  const { showError } = useErrorContext();
+
   const [queue, setQueue] = useState([]);
 
   const enqueueRequest = (requestFn) => {
@@ -17,11 +22,7 @@ export const OfflineQueueContextProvider = ({ children }) => {
 
   const processQueue = async () => {
     for (const requestFn of queue) {
-      try {
-        await requestFn();
-      } catch (error) {
-        console.log(error);
-      }
+      await requestFn();
     }
 
     setQueue([]);
@@ -29,12 +30,17 @@ export const OfflineQueueContextProvider = ({ children }) => {
 
   useEffect(() => {
     if (isConnected === true) {
-      processQueue();
+      try {
+        processQueue();
+      } catch (error) {
+        showError("Algo deu errado ao enviar suas alterações para o servidor...");
+      }
     }
   }, [isConnected]);
 
   return (
     <OfflineQueueContext.Provider value={{ enqueueRequest }}>
+      {!isConnected && <NoInternetWarning />}
       {children}
     </OfflineQueueContext.Provider>
   );

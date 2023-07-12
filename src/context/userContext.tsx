@@ -2,8 +2,8 @@ import React, { useContext, useState } from "react";
 import { services } from "../api/services";
 import { repositories } from "../database/repositories";
 import { useNetInfo } from "@react-native-community/netinfo";
-import { View, Text } from "react-native";
 import { useOfflineQueue } from "./offlineQueueContext";
+import { useErrorContext } from "./errorContext";
 
 interface IUserContext {
   userList: IUserList | null;
@@ -11,12 +11,15 @@ interface IUserContext {
 
   loadUsers: () => Promise<void>;
   createUser: (user: IUserPostRequest) => Promise<void>;
+  setUserList: React.Dispatch<React.SetStateAction<IUserList>>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const UserContext = React.createContext<IUserContext>({} as IUserContext);
 
 export const UserContextProvider = ({ children }) => {
   const { enqueueRequest } = useOfflineQueue();
+  const { showError } = useErrorContext();
 
   const [userList, setUserList] = useState<IUserList | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,74 +29,74 @@ export const UserContextProvider = ({ children }) => {
 
   const syncUsers = async () => {
     if (isConnected) {
-      console.log("SYNC USERS");
-      const res = (await services.user.list(1, 24)).data;
+      try {
+        const res = (await services.user.list(1, 24)).data;
 
-      repositories.user.completeUsersSync(res);
+        repositories.user.sync(res);
+      } catch (error) {
+        showError("Oops, ocorreu um erro durante a sincronização dos dados.");
+      }
     }
   };
 
   const loadUsers = async () => {
-    await syncUsers();
+    try {
+      await syncUsers();
 
-    const localUsers = await repositories.user.getUsers(nextPage);
-    const hasLocalUsers = Boolean(localUsers.data.length);
+      const localUsers = await repositories.user.list(nextPage);
+      const hasLocalUsers = Boolean(localUsers.data.length);
 
-    if (!hasLocalUsers) {
-      console.log("REQUISIÇÃO API");
-      const apiUsers = await services.user.list(nextPage);
+      if (!hasLocalUsers) {
+        const apiUsers = await services.user.list(nextPage);
 
-      const hasApiUsers = Boolean(apiUsers.data.length);
+        const hasApiUsers = Boolean(apiUsers.data.length);
 
-      if (!hasApiUsers) {
-        setIsLoading(false);
-      } else {
-        setUserList((prev) => ({
-          ...apiUsers,
-          data: [...(prev?.data || []), ...apiUsers.data],
-        }));
+        if (!hasApiUsers) {
+          setIsLoading(false);
+        } else {
+          setUserList((prev) => ({
+            ...apiUsers,
+            data: [...(prev?.data || []), ...apiUsers.data],
+          }));
+        }
+
+        return;
       }
 
-      return;
+      setUserList((prev) => ({ ...localUsers, data: [...(prev?.data || []), ...localUsers.data] }));
+      if (!hasLocalUsers) setIsLoading(false);
+    } catch (error) {
+      showError("Não foi possível carregar os usuários.");
     }
-
-    setUserList((prev) => ({ ...localUsers, data: [...(prev?.data || []), ...localUsers.data] }));
-    if (!hasLocalUsers) setIsLoading(false);
   };
 
   const createUser: IUserContext["createUser"] = async (user) => {
-    console.log("CREATE USER");
-    if (isConnected) {
-      console.log("API CREATE");
-      const res = await services.user.save(user);
+    try {
+      if (isConnected) {
+        const res = await services.user.save(user);
 
-      await repositories.user.save(res);
+        await repositories.user.save(res);
 
-      setUserList((prev) => ({ ...prev, data: [...(prev?.data || []), res] }));
-    } else {
-      console.log("LOCAL");
-      const res = await repositories.user.save(user);
+        setUserList((prev) => ({ ...prev, data: [...(prev?.data || []), res] }));
+      } else {
+        const res = await repositories.user.save(user);
 
-      enqueueRequest(async () => {
-        await services.user.save(user);
-        syncUsers();
-      });
+        enqueueRequest(async () => {
+          await services.user.save(user);
+          syncUsers();
+        });
 
-      setUserList((prev) => ({ ...prev, data: [...(prev?.data || []), res] }));
+        setUserList((prev) => ({ ...prev, data: [...(prev?.data || []), res] }));
+      }
+    } catch (error) {
+      showError("Não foi possível registrar o usuário");
     }
   };
 
   return (
-    <UserContext.Provider value={{ userList, isLoading, loadUsers, createUser }}>
-      {!isConnected && (
-        <View>
-          <Text>
-            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Accusantium sunt ex tempore?
-            Obcaecati officiis quis, ducimus eaque earum qui veniam sapiente animi corrupti,
-            reiciendis voluptates sed consectetur libero illo repudiandae.
-          </Text>
-        </View>
-      )}
+    <UserContext.Provider
+      value={{ userList, setUserList, isLoading, setIsLoading, loadUsers, createUser }}
+    >
       {children}
     </UserContext.Provider>
   );
